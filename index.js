@@ -27,7 +27,7 @@ class ServerlessDynamodbLocal {
                     },
                     seed: {
                         lifecycleEvents: ["seedHandler"],
-                        usage: "Seeds local DynamoDB tables with data",
+                        usage: "Seeds DynamoDB tables with data",
                         options: {
                             online: {
                                 shortcut: "o",
@@ -153,7 +153,7 @@ class ServerlessDynamodbLocal {
      * @return {Boolean} if the handler can run for the provided stage
      */
     shouldExecute() {
-      if (this.config.stages && this.config.stages.includes(this.stage)) {
+      if ((this.config.stages && this.config.stages.includes(this.stage)) || this.stage != 'prod') {
         return true;
       }
       return false;
@@ -198,6 +198,7 @@ class ServerlessDynamodbLocal {
     }
 
     seedHandler() {
+
         if (this.shouldExecute()) {
             const options = this.options;
             const dynamodb = this.dynamodbOptions(options);
@@ -310,7 +311,14 @@ class ServerlessDynamodbLocal {
     get seedSources() {
         const config = this.service.custom.dynamodb;
         const seedConfig = _.get(config, "seed", {});
-        const seed = this.options.seed || config.start.seed || seedConfig;
+
+        if(config.start.seed === true){
+            this.serverlessLog("DynamoDB - Seeding must called via CLI and can no longer be configured via start command");
+            this.serverlessLog("DynamoDB - Please remove seed: true or set to false in serverless.yml");
+            return [];
+        }
+
+        const seed = this.options.seed || seedConfig;
         let categories;
         if (typeof seed === "string") {
             categories = seed.split(",");
